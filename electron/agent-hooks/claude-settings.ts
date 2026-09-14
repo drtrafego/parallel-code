@@ -41,7 +41,7 @@ export function buildClaudeHookSettings(
   const hook: CommandHook = {
     type: 'command',
     command: platform === 'win32'
-      ? `powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "${hookScriptPath}"`
+      ? `"%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "${hookScriptPath}"`
       : `/bin/sh ${shellQuote(hookScriptPath)}`,
     timeout: HOOK_TIMEOUT_SECONDS,
   };

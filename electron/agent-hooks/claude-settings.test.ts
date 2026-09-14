@@ -42,7 +42,7 @@ describe('buildClaudeHookSettings', () => {
     const hook = buildClaudeHookSettings('C:\\Program Files\\Parallel Code\\hook.ps1', 'win32')
       .hooks.Stop[0].hooks[0];
     expect(hook.command).toBe(
-      'powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "C:\\Program Files\\Parallel Code\\hook.ps1"',
+      '"%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "C:\\Program Files\\Parallel Code\\hook.ps1"',
     );
   });
 

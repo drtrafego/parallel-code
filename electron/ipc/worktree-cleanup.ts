@@ -96,8 +96,9 @@ export async function reclaimOwnership(
 ): Promise<string | null> {
   if (process.platform === 'win32') {
     try {
-      // On Windows, reset read-only attributes and force remove if needed
-      await exec('cmd.exe', ['/c', 'attrib', '-r', '-h', '-s', `${worktreePath}\\*`, '/s', '/d'], { timeout: 15_000 });
+      const systemRoot = process.env.SystemRoot || 'C:\\Windows';
+      const attribPath = path.join(systemRoot, 'System32', 'attrib.exe');
+      await exec(attribPath, ['-r', '-h', '-s', path.join(worktreePath, '*'), '/s', '/d'], { timeout: 15_000 });
       return null;
     } catch (e: unknown) {
       return firstLine(e);
