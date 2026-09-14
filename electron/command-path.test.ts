@@ -70,4 +70,37 @@ describe.skipIf(process.platform !== 'win32')('Windows command resolution', () =
     });
     expect(output).toContain('READY:hello world');
   });
+  it('handles complex prompts with special characters (&, %, ^, quotes, accents, spaces)', async () => {
+    const baseDir = process.env.SystemDrive ? path.join(process.env.SystemDrive + '\\', 'Temp') : os.tmpdir();
+    if (!fs.existsSync(baseDir)) fs.mkdirSync(baseDir, { recursive: true });
+    const dir = fs.mkdtempSync(path.join(baseDir, 'par-pty-spec-'));
+    dirs.push(dir);
+    const shim = path.join(dir, 'test-prompt.cmd');
+    fs.writeFileSync(shim, '@echo off\r\necho PROMPT:%*\r\n');
+    const complexArg = 'Fix "bug" & test %PATH% ^ (ç ã é) "spaced path"';
+    const launch = windowsPtyCommand(shim, [complexArg]);
+    const sanitizedEnv = { ...process.env };
+    for (const key of Object.keys(sanitizedEnv)) {
+      if (typeof sanitizedEnv[key] === 'string' && (sanitizedEnv[key]!.startsWith('\\\\') || sanitizedEnv[key]!.includes('Meu Drive'))) {
+        delete sanitizedEnv[key];
+      }
+    }
+    const output = await new Promise<string>((resolve, reject) => {
+      const proc = pty.spawn(launch.command, launch.args, {
+        cwd: dir,
+        env: sanitizedEnv as Record<string, string>,
+        cols: 80,
+        rows: 24,
+        useConpty: true,
+      });
+      let text = '';
+      const timeout = setTimeout(() => {
+        proc.kill();
+        reject(new Error(`ConPTY timed out: ${text}`));
+      }, 5000);
+      proc.onData((data) => { text += data; });
+      proc.onExit(() => { clearTimeout(timeout); resolve(text); });
+    });
+    expect(output).toContain('PROMPT:');
+  });
 });

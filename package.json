@@ -157,7 +157,9 @@
       }
     },
     "win": {
-      "target": ["nsis"],
+      "target": [
+        "nsis"
+      ],
       "artifactName": "Parallel-Code-Windows-x64-Setup.${ext}"
     },
     "mac": {
