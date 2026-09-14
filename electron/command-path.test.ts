@@ -76,7 +76,8 @@ describe.skipIf(process.platform !== 'win32')('Windows command resolution', () =
     const dir = fs.mkdtempSync(path.join(baseDir, 'par-pty-spec-'));
     dirs.push(dir);
     const shim = path.join(dir, 'test-prompt.cmd');
-    fs.writeFileSync(shim, '@echo off\r\necho PROMPT:%*\r\n');
+    const outFile = path.join(dir, 'received.txt');
+    fs.writeFileSync(shim, `@echo off\r\necho %* > "${outFile}"\r\necho PROMPT:%*\r\n`);
     const complexArg = 'Fix "bug" & test %PATH% ^ (ç ã é) "spaced path"';
     const launch = windowsPtyCommand(shim, [complexArg]);
     const sanitizedEnv = { ...process.env };
@@ -85,7 +86,7 @@ describe.skipIf(process.platform !== 'win32')('Windows command resolution', () =
         delete sanitizedEnv[key];
       }
     }
-    const output = await new Promise<string>((resolve, reject) => {
+    await new Promise<string>((resolve, reject) => {
       const proc = pty.spawn(launch.command, launch.args, {
         cwd: dir,
         env: sanitizedEnv as Record<string, string>,
@@ -101,6 +102,10 @@ describe.skipIf(process.platform !== 'win32')('Windows command resolution', () =
       proc.onData((data) => { text += data; });
       proc.onExit(() => { clearTimeout(timeout); resolve(text); });
     });
-    expect(output).toContain('PROMPT:');
+    expect(fs.existsSync(outFile)).toBe(true);
+    const receivedContent = fs.readFileSync(outFile, 'utf8');
+    expect(receivedContent).toContain('Fix');
+    expect(receivedContent).toContain('bug');
+    expect(receivedContent).toContain('spaced path');
   });
 });
